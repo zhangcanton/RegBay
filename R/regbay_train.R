@@ -1,18 +1,14 @@
 #' Regulatory element prediction based on Bayesian network
 #' @description
-#' RegBay predicts regulatory element using ATAC-seq and histone modification ChIP-seq
-#' profiles.
-#' @param bam_fn path to bam files including ATAC, H3K27ac, H3K4me1, and H3K4me3
-#' @param active_pmo path to a bed file
-#' @param inactive_pmo path to a bed file
-#' @param active_enc path to a bed file
-#' @param inactive_enc path to a bed file
-#' @param peak_fn optional, address to peak files, BED or narrowPeak
+#' RegBay predicts regulatory element using ATAC-seq and histone modification ChIP-seq profiles.
+#' @param fn_list variable names in 1st column and path to files in 2nd column, separated by comma (no space)
+#' files include path to bam files, annotation bed files, and the optional ATAC peak file
+#' @param genome genome name or genome files
 #' @param p_val p-value threshold
 #' @param cores number of available cores, for parallel running
 #' @return prediction model
 #' @examples
-#' bn_train()
+#' bn_model <- bn_train(meta = data.meta, genome = "hg38", p_val = 0.05, cores = 8)
 #' @export
 #' @import BSgenome.Hsapiens.UCSC.hg38
 #' @import BSgenome.Mmusculus.UCSC.mm10
@@ -301,5 +297,5 @@ do.call(cat, c(pr.label, sep = "\n"))
 print("AUC:")
 do.call(cat, c(roc.label, sep = "\n")
 
-### save prediction model
-saveRDS(fit.bn, 'data/bn_model.rds')
+### output prediction model
+return(fti.bn)
