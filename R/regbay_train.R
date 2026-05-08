@@ -1,17 +1,14 @@
 #' Regulatory element prediction based on Bayesian network
 #' @description
 #' RegBay predicts regulatory element using ATAC-seq and histone modification ChIP-seq profiles.
-#' @param fn_list variable names in 1st column and path to files in 2nd column, separated by comma (no space)
+#' @param inputs path to input files, separated by comma (no space)
 #' files include path to bam files, annotation bed files, and the optional ATAC peak file
-#' @param genome genome name or genome files
 #' @param p_val p-value threshold
 #' @param cores number of available cores, for parallel running
 #' @return prediction model
 #' @examples
-#' bn_model <- bn_train(meta = data.meta, genome = "hg38", p_val = 0.05, cores = 8)
+#' bn_model <- bn_train(inputs = data.meta, p_val = 0.05, cores = 8)
 #' @export
-#' @import BSgenome.Hsapiens.UCSC.hg38
-#' @import BSgenome.Mmusculus.UCSC.mm10
 #' @import GenomicRanges
 #' @import rtracklayer
 #' @import bamsignals
