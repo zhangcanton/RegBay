@@ -126,12 +126,6 @@ check_file <- function(fn) {
     }
 }
 
-check_ext <- function(fn, suf) {
-    if (sub(".*\\.", "", fn) != suf) {
-        stop(paste0("Incorrect file format. Require ", toupper(suf), " files."))
-    }
-}
-
 check_dir <- function(dir) {
     if (!dir.exists(dir)) {
         stop("Directory does not exist.")
