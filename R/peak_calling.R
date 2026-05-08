@@ -24,15 +24,12 @@ peak_calling <- function(cov, peak_fn = NULL, p_val = 0.05, cores = 1){
     if (is.character(peak_fn)) {
         ### user-defined peak regions, withou peak calling
         print(">>> Read in user-defined ATAC-seq peaks ...")
+        check_file(peak_fn)
         suffix <- sub(".*\\.", "", peak_fn)
         if (suffix == "bed" | suffix == "narrowPeak") {
-            peaks <- read.table(peak_fn)
-            peaks <- peaks[, 1:3]
-            colnames(peaks) <- c("chr", "start", "end")
-            peaks <- peaks[grep("^chr[0-9,X]{1,2}$", peaks$chr), ]
-            peaks <- makeGRangesFromDataFrame(peaks)
+            peaks <- import(peak_fn)
         } else {
-            stop("Cannot detect valid format for peak files. Either BED or narrowPeak is accepted. Please try again.")
+            stop("Incorrect format for peak files. Either BED or narrowPeak is accepted.")
         }
         ### fit to nb distribution
         mu <- sapply(cov, function(x) {
