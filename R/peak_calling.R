@@ -13,8 +13,6 @@
 #' cov <- coverage(raws)
 #' peaks <- peak_calling(cov, peak_fn = 'data/peaks.bed', p_val = p_val, cores = cores)
 #' @export
-#' @importFrom parallel mclappy
-#' @import rtracklayer
 
 peak_calling <- function(cov, peak_fn = NULL, p_val = 0.05, cores = 1){
     print("Start process - ATAC-seq Peak Calling")
