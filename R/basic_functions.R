@@ -1,31 +1,4 @@
 
-########## Get project path ##########
-get_source_dir <- function(){
-    args <- commandArgs(trailingOnly = FALSE)
-    file_arg <- grep("^--file=", args, value = TRUE)
-    # Check whether script path exists
-    if (length(file_arg) == 0) {
-        stop(
-            "Cannot determine script path. This function must be run using Rscript or R --file."
-        )
-    } else if (length(file_arg) > 1) {
-        # Handle unexpected multiple matches
-        stop("Multiple --file arguments detected.")
-    }
-    # Extract full path to script
-    script_path <- tryCatch(
-        normalizePath(sub("^--file=", "", file_arg)),
-        error = function(e) {
-            stop("Script file does not exist or path is invalid.")
-        }
-    )
-    # Path to project directory
-    proj_dir <- dirname(script_path)
-    return(proj_dir)
-}
-
-# get_source_dir()
-
 ########## Load environment ##########
 env_check <- function(){
     # default packages
