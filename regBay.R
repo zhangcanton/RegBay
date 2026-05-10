@@ -48,25 +48,25 @@ if(all(sapply(c(opt$help, opt$peakCall, opt$train, opt$predict), is.null))){
 }
 
 ### Help messages
-if(!is.null(opt$help)){
+if (!is.null(opt$help)) {
     cat(
-        "
-        Usage: Rscript regBay.R [options]
-        
-        Options:
-            -h, --help  Show help message
-            -o, --outdir    output dircetory (DEFAULT:current folder)
-            -t, --cores     number of cores to use (DEFAULT:1)
-            -C, --peakCall  Peak calling/refining module
-            -R, --train     Train RegBay regulatory element model
-            -P, --predict   Predict regulatory element using RegBay
-            -i, --input     path to input files (.txt format)
-            -p, --pval      p-value for peak calling (DEFAULT:0.05)
-            -m, --model     path to RegBay model (.rds format)
-            -l, --cutoff    cutoff length for broad peaks (DEFAULT:1000)
-            -w, --window    window size of peak calling (DEFAULT:10000)
-            -f, --flank     size of flanking regions (DEFAULT:500)
-        "
+"
+    Usage: Rscript regBay.R [options]
+
+    Options:
+        -h, --help  Show help message
+        -o, --outdir    output dircetory (DEFAULT:current folder)
+        -t, --cores     number of cores to use (DEFAULT:1)
+        -C, --peakcall  peak calling/refining module
+        -R, --train     training module for RegBay regulatory element model
+        -P, --predict   prediction module for regulatory element using RegBay
+        -i, --input     path to input files (.txt format)
+        -p, --pval      p-value for peak calling (DEFAULT:0.05)
+        -m, --model     path to RegBay model (.rds format)
+        -l, --cutoff    cutoff length for broad peaks (DEFAULT:1000)
+        -w, --window    window size of peak calling (DEFAULT:10000)
+        -f, --flank     size of flanking regions (DEFAULT:500)\n
+"
     )
 }
 
