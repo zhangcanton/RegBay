@@ -35,6 +35,7 @@ get_source_dir <- function() {
 
 path <- get_source_dir()
 source(paste0(path, "/BIN/basic_functions.R"))
+source(paste0(path, "/BIN/functions.R"))
 
 
 ########## set up required environment ##########
