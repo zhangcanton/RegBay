@@ -82,8 +82,8 @@ mat <- matrix(c(
     "model", "m", 1, "character", "path to pre-train RegBay model (.rds format)",
     # general parameters
     "cores", "t", 1, "integer", "number of cores to use (DEFAULT:1)",
-    "outdir", "o", 1, "character", "output directory (DEFAULT:current directory)",
-    "help", "h", 0, "logical", "this help message"
+    "outdir", "o", 1, "character", "output directory (DEFAULT:current folder)",
+    "help", "h", 0, "logical", "show help message"
 ), ncol = 5, byrow = T)
 
 # getopt(mat)
