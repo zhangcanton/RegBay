@@ -97,11 +97,13 @@ check_file <- function(fn) {
     if (file.info(fn)$size == 0) {
         stop("Empty file is detected.")
     }
+    return(0)
 }
 
 check_dir <- function(dir) {
     if (!dir.exists(dir)) {
         stop("Directory does not exist.")
     }
+    return(0)
 }
 
