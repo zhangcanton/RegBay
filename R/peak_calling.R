@@ -9,7 +9,6 @@ cat(
 )
 
 ### Start time
-print("Start process - ATAC-seq Peak Calling")
 s.time <- Sys.time()
 
 ### check output dir
@@ -74,7 +73,7 @@ if (is.character(peak_fn)) {
     mu <- unlist(mu[1, ])
     vi <- ifelse(vi > mu, vi, mu + 1e-6)
     r <- mu * mu / (vi - mu)
-    peak.cut <- stats::qnbinom(1 - p_val, size = r, mu = mu, lower.tail = T)
+    peak.cut <- stats::qnbinom(1 - opt$pval, size = r, mu = mu, lower.tail = T)
     # call peaks using NB distribution
     cuts <- lapply(seq_along(cov), function(i) {
         IRanges::slice(cov[[i]], lower = peak.cut[i])
@@ -91,7 +90,7 @@ if (is.character(peak_fn)) {
 if (opt$verbose) {
     print(">>> Narrowing and spliting long peaks ...")
 }
-lens <- max(cutoff, quantile(width(peaks), 0.8))
+lens <- max(opt$cutoff, quantile(width(peaks), 0.8))
 # shorts <- peaks[which(width(peaks) <= lens & width(peaks) > 100)]
 cuts <- Views(cov, peaks)
 longs <- lapply(cuts, function(x) x[width(x) > lens])
@@ -168,9 +167,9 @@ long.slices <- lapply(longs, function(x) {
 
         ### peak calling based on 10 kb window
         segs <- x@ranges[i]
-        start(segs) <- max(1, start(segs) - window / 2)
+        start(segs) <- max(1, start(segs) - opt$window / 2)
         ind <- start(segs)
-        end(segs) <- min(length(x@subject), end(segs) + window / 2)
+        end(segs) <- min(length(x@subject), end(segs) + opt$window / 2)
         segs <- Views(x@subject, segs)
         segs <- as.numeric(segs[[1]])
         v <- var(segs)
@@ -179,7 +178,7 @@ long.slices <- lapply(longs, function(x) {
         v <- k * k / (v - k + 1e-06)
         v <- 1 - stats::pnbinom(segs, size = v, mu = k, lower.tail = T)
         v <- v[(start(x@ranges[i]) - ind + 1):(end(x@ranges[i]) - ind + 1)]
-        k <- which(v < p_val)
+        k <- which(v < opt$pval)
         if (length(slices) == 0) {
             v <- k
         } else {
@@ -245,8 +244,8 @@ shorts <- lapply(shorts, function(x) { # skip the peaks at the first and last 5k
 })
 short.slices <- mclapply(shorts, function(x) {
     regs <- x@ranges
-    start(regs) <- start(regs) - window / 2
-    end(regs) <- end(regs) + window / 2
+    start(regs) <- start(regs) - opt$window / 2
+    end(regs) <- end(regs) + opt$window / 2
 
     deps <- Views(x@subject, regs)
     slices <- viewApply(deps, function(run) {
@@ -255,8 +254,8 @@ short.slices <- mclapply(shorts, function(x) {
         vrun <- ifelse(vrun > krun, vrun, krun + 1e-6)
         vrun <- krun * krun / (vrun - krun)
         prun <- 1 - stats::pnbinom(as.numeric(run), size = vrun, mu = krun, lower.tail = T)
-        prun <- prun[(window / 2 + 1):(length(prun) - window / 2)]
-        krun <- which(prun < p_val)
+        prun <- prun[(opt$window / 2 + 1):(length(prun) - opt$window / 2)]
+        krun <- which(prun < opt$pval)
         if (length(krun) == 0 | max(krun) - min(krun) < 100) {
             return(integer(0))
         } else {
@@ -417,8 +416,8 @@ pvalue <- lapply(raws, function(x) 1 - stats::pnbinom(x, size = r, mu = mu, lowe
 pvalue <- unlist(pvalue)
 qvalue <- p.adjust(pvalue, method = "BH")
 peaks$score <- qvalue
-peaks <- peaks[peaks$score < p_val]
+peaks <- peaks[peaks$score < opt$pval]
 
 ### output peak regions
 export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
-print(paste0("Done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min"))
+print(paste0("Peak processing done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min"))
