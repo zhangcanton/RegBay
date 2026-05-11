@@ -3,7 +3,7 @@
 env_check <- function(){
     # default packages
     cran_pkg <- data.frame(
-        pkg = c("getopt", "bnlearn", "parallel", "dplyr", "yardstick"),
+        pkg = c("bnlearn", "parallel", "dplyr", "yardstick"),
         ver = c("1.20.4", "5.0", "4.4.1", "1.1.4", "1.3.2")
     )
     bioc_pkg <- data.frame(
@@ -69,25 +69,46 @@ env_check <- function(){
 ########## Parameter settings ##########
 mat <- matrix(c(
     # select functions
-    "peakcall", "C", 0, "logical", "peak processing for ATAC-seq", NULL,
-    "train", "R", 0, "logical", "train RegBay prediction model", NULL,
-    "predict", "P", 0, "logical", "predict regulatory elements using RegBay pre-trained model", NULL,
+    "peakcall", "C", 0, "logical", "peak processing for ATAC-seq",
+    "train", "R", 0, "logical", "train RegBay prediction model",
+    "predict", "P", 0, "logical", "predict regulatory elements using RegBay pre-trained model",
     # input parameters
-    "input", "i", 1, "character", "path to input files (.txt format, separated by comma)", NULL,
-    "pval", "p", 1, "double", "p-value threshold for peak calling/refinement (DEFAULT:0.05)", 0.05,
-    "cutoff", "l", 1, "integer", "cutoff length for broad peaks (DEFAULT:1000)", 1000,
-    "window", "w", 1, "integer", "window size of peak calling (DEFAULT:10000)", 10000,
-    "flank", "f", 1, "integer", "extend length to search for histone modification signals (DEFAULT: 500)", 500,
+    "input", "i", 1, "character", "path to input files (.txt format, separated by comma)",
+    "pval", "p", 1, "double", "p-value threshold for peak calling/refinement (DEFAULT:0.05)",
+    "cutoff", "l", 1, "integer", "cutoff length for broad peaks (DEFAULT:1000)",
+    "window", "w", 1, "integer", "window size of peak calling (DEFAULT:10000)",
+    "flank", "f", 1, "integer", "extend length to search for histone modification signals (DEFAULT: 500)",
     # pre-trained model
-    "model", "m", 1, "character", "path to pre-train RegBay model (.rds format)", NULL,
+    "model", "m", 1, "character", "path to pre-train RegBay model (.rds format)",
     # general parameters
-    "cores", "t", 1, "integer", "number of cores to use (DEFAULT:1)", 1,
-    "verbose", "v", 1, "logical", "show detailed message", TRUE,
-    "outdir", "o", 1, "character", "output directory (DEFAULT:current folder)", getwd(),
-    "help", "h", 0, "logical", "show help message", NULL
-), ncol = 6, byrow = T)
+    "cores", "t", 1, "integer", "number of cores to use (DEFAULT:1)",
+    "verbose", "v", 0, "logical", "show detailed message",
+    "outdir", "o", 1, "character", "output directory (DEFAULT:current folder)",
+    "help", "h", 0, "logical", "show help message"
+), ncol = 5, byrow = T)
 
 # getopt(mat)
+
+set_default <- function(opt){
+    if(is.null(opt$pval)){
+        opt$pval <- 0.05
+    }
+    if (is.null(opt$cutoff)) {
+        opt$cutoff <- 1000
+    }
+    if (is.null(opt$window)) {
+        opt$window <- 10000
+    }
+    if(is.null(opt$flank)){
+        opt$flank <- 500
+    }
+    if (is.null(opt$cores)) {
+        opt$cores <- 1
+    }
+    if(is.null(opt$outdir)){
+        opt$outdir <- getwd()
+    }
+}
 
 ##### Check files #####
 check_file <- function(fn) {
