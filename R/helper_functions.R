@@ -82,7 +82,7 @@ mat <- matrix(c(
     "model", "m", 1, "character", "path to pre-train RegBay model (.rds format)",
     # general parameters
     "cores", "t", 1, "integer", "number of cores to use (DEFAULT:1)",
-    "verbose", "v", 0, "logical", "show detailed message",
+    "verbose", "v", 0, "logical", "show detailed message" (DEFAULT:FALSE),
     "outdir", "o", 1, "character", "output directory (DEFAULT:current folder)",
     "help", "h", 0, "logical", "show help message"
 ), ncol = 5, byrow = T)
@@ -107,6 +107,9 @@ set_default <- function(opt){
     }
     if(is.null(opt$outdir)){
         opt$outdir <- getwd()
+    }
+    if(is.null(opt$verbose)){
+        opt$verbose <- FALSE
     }
 }
 
