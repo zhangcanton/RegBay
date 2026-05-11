@@ -4,7 +4,7 @@ env_check <- function(){
     # default packages
     cran_pkg <- data.frame(
         pkg = c("bnlearn", "parallel", "dplyr", "yardstick"),
-        ver = c("1.20.4", "5.0", "4.4.1", "1.1.4", "1.3.2")
+        ver = c("5.0", "4.4.1", "1.1.4", "1.3.2")
     )
     bioc_pkg <- data.frame(
         pkg = c("GenomicRanges", "rtracklayer", "GenomicAlignments"),
