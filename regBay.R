@@ -1,4 +1,3 @@
-
 cat(
     "\n
     ============================================================
@@ -35,16 +34,16 @@ get_source_dir <- function() {
 
 path <- get_source_dir()
 source(paste0(path, "/R/helper_functions.R"))
-source(paste0(path, "/R/functions.R"))
-
-
-########## set up required environment ##########
-env_check()
 
 ########## user-input parameters ##########
+if (!requireNamespace("getopt", quietly = T)) {
+    suppressMessages(install.packages("getopt"))
+}
+suppressPackageStartupMessages(library(getopt))
+
 opt <- getopt(mat)
-if(all(sapply(c(opt$help, opt$peakCall, opt$train, opt$predict), is.null))){
-  stop("Must specify one function module (peakCall, train, predict) or \'help\'")
+if (all(sapply(c(opt$help, opt$peakcall, opt$train, opt$predict), is.null))) {
+    stop("Must specify one function module (peakCall, train, predict) or \'help\'")
 }
 
 ### Help messages
@@ -54,7 +53,7 @@ if (!is.null(opt$help)) {
     Usage: Rscript regBay.R [options]
 
     Options:
-      
+
       Module:
         -C, --peakcall  Peak calling/refining module
         -R, --train     Training module for RegBay regulatory element model
@@ -79,14 +78,28 @@ if (!is.null(opt$help)) {
         -v, --verbose   Show detailed message\n
 "
     )
+    q(status = 0)
 }
+
+########## set up required environment ##########
+flag <- env_check()
+source(paste0(path, "/R/functions.R"))
 
 ########## initiate funciton modules ##########
 # Peak calling/Peak refinement
-if (!is.null(opt$peakCall)) source(paste0(path, "/R/peak_calling.R"))
+if (!is.null(opt$peakcall)) {
+    flag <- set_default()
+    source(paste0(path, "/R/peak_calling.R"))
+}
 
 # Train RegBay model
-if (!is.null(opt$train)) source(paste0(path, "/R/regbay_train.R"))
+if (!is.null(opt$train)) {
+    flag <- set_default()
+    source(paste0(path, "/R/regbay_train.R"))
+}
 
 # Predict regulatory elements using RegBay model
-if (!is.null(opt$predict)) source(paste0(path, "/R/regbay_predict.R"))
+if (!is.null(opt$predict)) {
+    flag <- set_default()
+    source(paste0(path, "/R/regbay_predict.R"))
+}
