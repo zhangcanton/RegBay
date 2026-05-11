@@ -34,8 +34,8 @@ get_source_dir <- function() {
 }
 
 path <- get_source_dir()
-source(paste0(path, "/BIN/helper_functions.R"))
-source(paste0(path, "/BIN/functions.R"))
+source(paste0(path, "/R/helper_functions.R"))
+source(paste0(path, "/R/functions.R"))
 
 
 ########## set up required environment ##########
@@ -83,10 +83,10 @@ if (!is.null(opt$help)) {
 
 ########## initiate funciton modules ##########
 # Peak calling/Peak refinement
-if (!is.null(opt$peakCall)) source(paste0(path, "/BIN/peak_calling.R"))
+if (!is.null(opt$peakCall)) source(paste0(path, "/R/peak_calling.R"))
 
 # Train RegBay model
-if (!is.null(opt$train)) source(paste0(path, "/BIN/regbay_train.R"))
+if (!is.null(opt$train)) source(paste0(path, "/R/regbay_train.R"))
 
 # Predict regulatory elements using RegBay model
-if (!is.null(opt$predict)) source(paste0(path, "/BIN/regbay_predict.R"))
+if (!is.null(opt$predict)) source(paste0(path, "/R/regbay_predict.R"))
