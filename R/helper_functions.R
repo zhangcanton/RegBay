@@ -111,6 +111,7 @@ set_default <- function(opt){
     if(is.null(opt$verbose)){
         opt$verbose <- FALSE
     }
+    return(opt)
 }
 
 ##### Check files #####
