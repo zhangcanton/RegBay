@@ -12,17 +12,19 @@ cat(
 print("Start process - ATAC-seq Peak Calling")
 s.time <- Sys.time()
 
+### check output dir
+flag <- check_dir(opt$outdir)
+
 ### Read input meta txt
 meta <- read_meta(opt)
 
 ### define necessary parameters
-p_val <- ifelse(is.null(opt$pval), 0.05, opt$pval)
-cores <- ifelse(is.null(opt$cores), 1, opt$cores)
-cutoff <- ifelse(is.null(opt$cutoff), 1000, opt$cutoff)
-window <- ifelse(is.null(opt$window), 10000, opt$window)
-outdir <- ifelse(is.null(opt$outdir), getwd(), opt$outdir)
 if ("peak_fn" %in% names(meta)) {
-    flag <- check_file(meta[[which("peak_fn" %in% names(meta))]])
+    flag <- check_file(meta$peak_fn)
+    suffix <- sub(".*\\.", "", meta$peak_fn)
+    if (suffix != "bed" | suffix != "narrowPeak") {
+        stop("Unable to read peak file.")
+    }
     print("Detect a ATAC-seq peak file. Skip peak calling.")
     peak_fn <- meta$peak_fn
 } else {
@@ -30,20 +32,23 @@ if ("peak_fn" %in% names(meta)) {
 }
 
 ### Count ATAC-seq coverage
+if (opt$verbose) {
+    print(">>> Count ATAC-seq coverage ...")
+}
 cov <- seq_cov(meta$atac)
 
-peak_calling <- function(cov, peak_fn = NULL, p_val = 0.05, cores = 1){
-##### ATAC-seq peak calling
+### Initial ATAC-seq peak calling (IF peak file provided, skip)
 if (is.character(peak_fn)) {
     ### user-defined peak regions, withou peak calling
-    print(">>> Read in user-defined ATAC-seq peaks ...")
-    check_file(peak_fn)
-    suffix <- sub(".*\\.", "", peak_fn)
-    if (suffix == "bed" | suffix == "narrowPeak") {
-        peaks <- import(peak_fn)
-    } else {
-        stop("Incorrect format for peak files. Either BED or narrowPeak is accepted.")
+    if (opt$verbose) {
+        print(">>> Read in user-defined ATAC-seq peaks ...")
     }
+    peaks <- tryCatch(
+        import(peak_fn),
+        error = function(e) {
+            stop("Unable to read peak file.")
+        }
+    )
     ### fit to nb distribution
     mu <- sapply(cov, function(x) {
         cut <- quantile(x, 0.99) # kick out potential outliers
@@ -54,9 +59,11 @@ if (is.character(peak_fn)) {
     mu <- unlist(mu[1, ])
     vi <- ifelse(vi > mu, vi, mu + 1e-6)
     r <- mu * mu / (vi - mu)
-} else if(is.null(peak_fn)) {
+} else if (is.null(peak_fn)) {
     ### call peaks using built-in peak caller
-    print(">>> Calling ATAC-seq peaks using built-in peak caller ...")
+    if (opt$verbose) {
+        print(">>> Calling ATAC-seq peaks using built-in peak caller ...")
+    }
     ### fit to nb distribution
     mu <- sapply(cov, function(x) {
         cut <- quantile(x, 0.99) # kick out potential outliers
@@ -81,7 +88,9 @@ if (is.character(peak_fn)) {
 
 
 ### cut long peaks (> 1kb) into individual peaks
-print(">>> Narrowing and spliting long peaks ...")
+if (opt$verbose) {
+    print(">>> Narrowing and spliting long peaks ...")
+}
 lens <- max(cutoff, quantile(width(peaks), 0.8))
 # shorts <- peaks[which(width(peaks) <= lens & width(peaks) > 100)]
 cuts <- Views(cov, peaks)
@@ -141,9 +150,9 @@ long.slices <- lapply(longs, function(x) {
                     any(lefts %in% x)
                 }))))
                 if (length(pick) > 0) {
-                    if(length(pick) == 1){
+                    if (length(pick) == 1) {
                         vec <- c(k, lefts, drops[[pick]])
-                    }else{
+                    } else {
                         vec <- c(k, lefts, unlist(drops[pick]))
                     }
                     vec <- unique(vec)
@@ -159,9 +168,9 @@ long.slices <- lapply(longs, function(x) {
 
         ### peak calling based on 10 kb window
         segs <- x@ranges[i]
-        start(segs) <- max(1, start(segs) - window/2)
+        start(segs) <- max(1, start(segs) - window / 2)
         ind <- start(segs)
-        end(segs) <- min(length(x@subject), end(segs) + window/2)
+        end(segs) <- min(length(x@subject), end(segs) + window / 2)
         segs <- Views(x@subject, segs)
         segs <- as.numeric(segs[[1]])
         v <- var(segs)
@@ -171,9 +180,9 @@ long.slices <- lapply(longs, function(x) {
         v <- 1 - stats::pnbinom(segs, size = v, mu = k, lower.tail = T)
         v <- v[(start(x@ranges[i]) - ind + 1):(end(x@ranges[i]) - ind + 1)]
         k <- which(v < p_val)
-        if(length(slices) == 0){
+        if (length(slices) == 0) {
             v <- k
-        } else{
+        } else {
             v <- k[-which(k %in% unlist(slices))] # remove the positions that are in slices
         }
         if (length(v) == 0) {
@@ -228,17 +237,16 @@ longs <- do.call("c", longs)
 longs <- longs[width(longs) > 100]
 
 
-
 ### local test for short peaks
 cuts <- Views(cov, peaks)
 shorts <- lapply(cuts, function(x) x[width(x) <= lens & width(x) > 100])
-shorts <- lapply(shorts, function(x){ # skip the peaks at the first and last 5kb of each chromosome
+shorts <- lapply(shorts, function(x) { # skip the peaks at the first and last 5kb of each chromosome
     x[start(x) > 5000 | end(x) < length(x@subject) - 5000]
 })
 short.slices <- mclapply(shorts, function(x) {
     regs <- x@ranges
-    start(regs) <- start(regs) - window/2
-    end(regs) <- end(regs) + window/2
+    start(regs) <- start(regs) - window / 2
+    end(regs) <- end(regs) + window / 2
 
     deps <- Views(x@subject, regs)
     slices <- viewApply(deps, function(run) {
@@ -247,7 +255,7 @@ short.slices <- mclapply(shorts, function(x) {
         vrun <- ifelse(vrun > krun, vrun, krun + 1e-6)
         vrun <- krun * krun / (vrun - krun)
         prun <- 1 - stats::pnbinom(as.numeric(run), size = vrun, mu = krun, lower.tail = T)
-        prun <- prun[(window/2 + 1):(length(prun) - window/2)]
+        prun <- prun[(window / 2 + 1):(length(prun) - window / 2)]
         krun <- which(prun < p_val)
         if (length(krun) == 0 | max(krun) - min(krun) < 100) {
             return(integer(0))
@@ -277,7 +285,7 @@ short.slices <- mclapply(shorts, function(x) {
     return(sub_views)
 }, mc.cores = cores)
 
-lefts <- lapply(seq_along(shorts), function(i){
+lefts <- lapply(seq_along(shorts), function(i) {
     sigs <- short.slices[[i]]
     ori <- shorts[[i]]
     hits <- findOverlaps(sigs@ranges, ori@ranges, type = "any")
@@ -361,7 +369,7 @@ left.slices <- lapply(lefts, function(x) {
         }
     })
     sub_views <- Filter(function(x) length(x) > 0, sub_views)
-    if(length(sub_views) == 0){
+    if (length(sub_views) == 0) {
         return(NULL)
     }
     subs <- do.call("c", sub_views)
@@ -374,7 +382,7 @@ left.slices <- lapply(lefts, function(x) {
     return(sub_views)
 })
 lefts <- mclapply(seq_along(left.slices), function(i) {
-    if(is.null(left.slices[[i]])){
+    if (is.null(left.slices[[i]])) {
         return(NULL)
     }
     GRanges(seqnames = names(cov)[i], ranges = left.slices[[i]]@ranges)
@@ -411,5 +419,6 @@ qvalue <- p.adjust(pvalue, method = "BH")
 peaks$score <- qvalue
 peaks <- peaks[peaks$score < p_val]
 
+### output peak regions
+export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
 print(paste0("Done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min"))
-
