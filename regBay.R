@@ -50,22 +50,33 @@ if(all(sapply(c(opt$help, opt$peakCall, opt$train, opt$predict), is.null))){
 ### Help messages
 if (!is.null(opt$help)) {
     cat(
-"
+        "
     Usage: Rscript regBay.R [options]
 
     Options:
-        -h, --help  Show help message
-        -o, --outdir    output dircetory (DEFAULT:current folder)
-        -t, --cores     number of cores to use (DEFAULT:1)
-        -C, --peakcall  peak calling/refining module
-        -R, --train     training module for RegBay regulatory element model
-        -P, --predict   prediction module for regulatory element using RegBay
-        -i, --input     path to input files (.txt format)
-        -p, --pval      p-value for peak calling (DEFAULT:0.05)
-        -m, --model     path to RegBay model (.rds format)
-        -l, --cutoff    cutoff length for broad peaks (DEFAULT:1000)
-        -w, --window    window size of peak calling (DEFAULT:10000)
-        -f, --flank     size of flanking regions (DEFAULT:500)\n
+      
+      Module:
+        -C, --peakcall  Peak calling/refining module
+        -R, --train     Training module for RegBay regulatory element model
+        -P, --predict   Prediction module for regulatory element using RegBay
+
+      I/O option:
+        -i, --input     Path to input files (.txt format)
+        -m, --model     Path to RegBay model (.rds format)
+        -o, --outdir    Output dircetory (DEFAULT:current folder)
+
+      Algorithm parameter:
+        -p, --pval      P-value for peak calling (DEFAULT:0.05)
+        -l, --cutoff    Cutoff length for broad peaks (DEFAULT:1000)
+        -w, --window    Window size of peak calling (DEFAULT:10000)
+        -f, --flank     Size of flanking regions (DEFAULT:500)
+
+      Performance option:
+        -t, --cores     Number of cores to use (DEFAULT:1)
+
+      Miscellaneous:
+        -h, --help      Show help message
+        -v, --verbose   Show detailed message\n
 "
     )
 }
