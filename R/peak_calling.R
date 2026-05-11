@@ -35,6 +35,8 @@ if (opt$verbose) {
     print(">>> Count ATAC-seq coverage ...")
 }
 cov <- seq_cov(meta$atac)
+cov <- cov[grep("^chr[0-9,X]{1,2}$", names(cov))]
+cov <- cov[sapply(cov, function(x) length(x@values)) > 1] # in case some chr are empty, kick out those
 
 ### Initial ATAC-seq peak calling (IF peak file provided, skip)
 if (is.character(peak_fn)) {
