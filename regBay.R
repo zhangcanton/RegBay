@@ -88,18 +88,18 @@ source(paste0(path, "/R/functions.R"))
 ########## initiate funciton modules ##########
 # Peak calling/Peak refinement
 if (!is.null(opt$peakcall)) {
-    flag <- set_default()
+    flag <- set_default(opt)
     source(paste0(path, "/R/peak_calling.R"))
 }
 
 # Train RegBay model
 if (!is.null(opt$train)) {
-    flag <- set_default()
+    flag <- set_default(opt)
     source(paste0(path, "/R/regbay_train.R"))
 }
 
 # Predict regulatory elements using RegBay model
 if (!is.null(opt$predict)) {
-    flag <- set_default()
+    flag <- set_default(opt)
     source(paste0(path, "/R/regbay_predict.R"))
 }
