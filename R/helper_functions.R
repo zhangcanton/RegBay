@@ -69,7 +69,7 @@ env_check <- function(){
 ########## Parameter settings ##########
 mat <- matrix(c(
     # select functions
-    "peakCall", "C", 0, "logical", "run Peak Calling/ Peak Refinement for ATAC-seq",
+    "peakcall", "C", 0, "logical", "run Peak Calling/ Peak Refinement for ATAC-seq",
     "train", "R", 0, "logical", "train RegBay prediction model",
     "predict", "P", 0, "logical", "predict regulatory elements using RegBay pre-trained model",
     # input parameters
@@ -82,6 +82,7 @@ mat <- matrix(c(
     "model", "m", 1, "character", "path to pre-train RegBay model (.rds format)",
     # general parameters
     "cores", "t", 1, "integer", "number of cores to use (DEFAULT:1)",
+    "verbose", "v", 1, "boolean", "show detailed message",
     "outdir", "o", 1, "character", "output directory (DEFAULT:current folder)",
     "help", "h", 0, "logical", "show help message"
 ), ncol = 5, byrow = T)
