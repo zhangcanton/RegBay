@@ -67,7 +67,7 @@ seq_cov <- function(fn, cores = 1){
         cov <- coverage(fn)
     }else if(is.list(fn)){
         cov <- mclapply(
-            fn[[c("atac", "h3k27ac", "h3k4me1", "h3k4me3", "input")]],
+            fn[c("atac", "h3k27ac", "h3k4me1", "h3k4me3", "input")],
             coverage,
             mc.cores = cores
         )
