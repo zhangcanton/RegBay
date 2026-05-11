@@ -24,10 +24,15 @@ if ("peak_fn" %in% names(meta)) {
     if (suffix != "bed" | suffix != "narrowPeak") {
         stop("Unable to read peak file.")
     }
-    print("Detect a ATAC-seq peak file. Skip peak calling.")
+    if (opt$verbose) {
+        print("Detect a ATAC-seq peak file. Skip peak calling.")
+    }
     peak_fn <- meta$peak_fn
 } else {
     peak_fn <- NULL
+    if (opt$verbose) {
+        print("No peak file detected. Start peak calling.")
+    }
 }
 
 ### Count ATAC-seq coverage
@@ -82,7 +87,7 @@ if (is.character(peak_fn)) {
     })
     peaks <- mclapply(seq_along(cuts), function(i) {
         GRanges(seqnames = names(cov)[i], ranges = cuts[[i]]@ranges)
-    }, mc.cores = cores)
+    }, mc.cores = opt$cores)
     peaks <- do.call("c", peaks)
     peaks <- peaks[width(peaks) > 100]
 }
@@ -209,7 +214,7 @@ long.slices <- lapply(longs, function(x) {
             slices <- append(slices, drops)
         }
         return(slices)
-    }, mc.cores = cores)
+    }, mc.cores = opt$cores)
     filts <- sapply(slices, length)
     filts <- which(filts == 0)
     starts <- sapply(slices, function(y) sapply(y, min))
@@ -233,7 +238,7 @@ long.slices <- lapply(longs, function(x) {
 })
 longs <- mclapply(seq_along(long.slices), function(i) {
     GRanges(seqnames = names(cov)[i], ranges = long.slices[[i]]@ranges)
-}, mc.cores = cores)
+}, mc.cores = opt$cores)
 longs <- do.call("c", longs)
 longs <- longs[width(longs) > 100]
 
@@ -284,7 +289,7 @@ short.slices <- mclapply(shorts, function(x) {
     subs <- reduce(subs)
     sub_views <- Views(subject(x), subs)
     return(sub_views)
-}, mc.cores = cores)
+}, mc.cores = opt$cores)
 
 lefts <- lapply(seq_along(shorts), function(i) {
     sigs <- short.slices[[i]]
@@ -357,7 +362,7 @@ left.slices <- lapply(lefts, function(x) {
             }
         }
         return(slices)
-    }, mc.cores = cores)
+    }, mc.cores = opt$cores)
     filts <- sapply(slices, length)
     filts <- which(filts == 0)
     starts <- sapply(slices, function(y) sapply(y, min))
@@ -387,11 +392,11 @@ lefts <- mclapply(seq_along(left.slices), function(i) {
         return(NULL)
     }
     GRanges(seqnames = names(cov)[i], ranges = left.slices[[i]]@ranges)
-}, mc.cores = cores)
+}, mc.cores = opt$cores)
 lefts <- do.call("c", lefts)
 shorts <- mclapply(seq_along(short.slices), function(i) {
     GRanges(seqnames = names(cov)[i], ranges = short.slices[[i]]@ranges)
-}, mc.cores = cores)
+}, mc.cores = opt$cores)
 shorts <- do.call("c", shorts)
 shorts <- c(shorts, lefts)
 shorts <- shorts[width(shorts) > 100]
@@ -407,7 +412,7 @@ peaks <- lapply(peaks, function(x) {
 })
 peaks <- mclapply(seq_along(peaks), function(i) {
     GRanges(seqnames = names(cov)[i], ranges = peaks[[i]])
-}, mc.cores = cores)
+}, mc.cores = opt$cores)
 peaks <- do.call("c", peaks)
 peaks <- reduce(peaks)
 
@@ -423,3 +428,4 @@ peaks <- peaks[peaks$score < opt$pval]
 ### output peak regions
 export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
 print(paste0("Peak processing done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min"))
+
