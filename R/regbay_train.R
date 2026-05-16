@@ -1,85 +1,64 @@
-#' Regulatory element prediction based on Bayesian network
-#' @description
-#' RegBay predicts regulatory element using ATAC-seq and histone modification ChIP-seq profiles.
-#' @param inputs path to input files, separated by comma (no space)
-#' files include path to bam files, annotation bed files, and the optional ATAC peak file
-#' @param p_val p-value threshold
-#' @param cores number of available cores, for parallel running
-#' @return prediction model
-#' @examples
-#' bn_model <- bn_train(inputs = data.meta, p_val = 0.05, cores = 8)
-#' @export
-#' @import GenomicRanges
-#' @import rtracklayer
-#' @import bamsignals
-#' @import GenomicAlignments
-#' @import preprocessCore
-#' @importFrom parallel mclappy
-#' @import bnlearn
-#' @import dplyr
+# ============================================================
+# Train RegBay prediction model
+# ============================================================
 
+cat(
+    "
+    +++++  Train prediction model for regulatory element   +++++
+    "
+)
 
-##### Part 1: Data Preparation #####
-### parameters
-# opt
+### Start time
+s.time <- Sys.time()
 
-### Sequencing BAM files (mandatory)
-# file check
-bam_cond <- c("ATAC", "H3K27ac", "H3K4me1", "H3K4me3", "input")
-bam_cond <- tolower(bam_cond) # NOT tested
-# peak_fn <- "/project/EnhancerAnnotation/new_files/manuscript/tracks/k562_atac_p05_genrich.narrowPeak"
-if (length(bam_cond) < 4) {
-  stop("Missing BAM input")
-}
+### check output dir
+flag <- check_dir(opt$outdir)
+
+### Read input meta txt
+meta <- read_meta(opt)
 
 ### Annotations (mandatory)
-# file check
+if(opt$verbose){
+    cat(
+    "
+    >>> Reading in regulatory element annotation sets.")
+}
+annos <- get_anno(meta)
 
-
-
-
-##### Part 2: ATAC-seq processing and peak calling #####
-print('Start processing ...')
-print('>>> Calling ATAC-seq peaks ...')
-##### ATAC-seq coverage
-raws <- readGAlignments(bam_fn[which(bam_cond == 'atac')])
-cov <- coverage(raws)
-cov <- cov[grep("^chr[0-9,X]{1,2}$", names(cov))]
-cov <- cov[sapply(cov, function(x) length(x@values)) > 1] # in case some chr are empty, kick out those
-### call ATAC-seq peaks
-path <- dirname(getwd())
-source(paste0(path,'/R/peak_calling.R'))
-if(){
-  peaks <- peak_calling(cov, peak_fn = peak_fn, p_val = p_val, cores = cores)
-} else {
-  peaks <- peak_calling(cov, p_val = p_val, cores = cores)
+### Sequencing BAM files (mandatory)
+if (opt$verbose) {
+    cat(
+    "
+    >>> Counting sequencing coverage.")
+}
+# bam_cond <- c("ATAC", "H3K27ac", "H3K4me1", "H3K4me3", "input")
+# bam_cond <- tolower(bam_cond)
+# ATAC-seq coverage
+raws <- seq_cov(meta$atac)
+raws <- raws[sapply(raws, function(x) length(x@values)) > 1] # remove empty chr
+# HM coverage
+hms <- seq_cov(meta, cores = opt$cores)
+if(!all(tolower(c("H3K27ac", "H3K4me1", "H3K4me3")) %in% names(hms))) {
+    stop("Missing histone modification profiles.")
 }
 
-
-                  
-##### Part 3: Coverage at BAM files #####
-print(">>> Counting read depth from BAM files ...")
-### raw coverage from BAM files
-raws <- cov
-hms <- mclapply(bam_fn[which(bam_cond != "atac")], function(bam){
-  cov <- coverage(bam)
-  cov <- cov[grep("^chr[0-9,X]{1,2}$", names(cov))]
-  return(cov)
-}, mc.cores = cores)
-names(hms) <- bam_cond[which(bam_cond != 'atac')]
-
-tot <- mclapply(bam_fn[which(bam_cond != "atac")], function(bam){
+### Normalization
+if (opt$verbose) {
+    cat(
+    "
+    >>> Normalizing sequencing counts.")
+}
+# library size
+tot <- mclapply(meta[names(hms)], function(bam){
   cots <- idxstatsBam(bam)
   return(sum(cots$mapped))
-}, mc.cores = cores)
+}, mc.cores = opt$cores)
 tot <- unlist(tot)
-
-### read depth normalization
 # Log2 normalization
-if (any(bam_cond %in% "input")) {
+if (any(names(hms) %in% "input")) {
   # with input/none
-  names(tot) <- bam_cond[which(bam_cond != 'atac')]
-  scales <- unlist(tot[which(names(tot) != 'input')]) / tot[["input"]]
+  names(tot) <- names(hms)
+  scales <- unlist(tot[which(names(tot) != 'input')]) / tot["input"]
   norms <- mclapply(seq_along(scales), function(i){
     # log2 normalization to input signals
     inputs <- hms[['input']] * scales[i]
@@ -93,7 +72,7 @@ if (any(bam_cond %in% "input")) {
     counts[counts < -10] <- -10
     counts <- counts[sapply(counts, function(x) length(x@values)) > 1] # in case some chr are empty, kick out those
     return(counts)
-  }, mc.cores = cores)
+  }, mc.cores = opt$cores)
   names(norms) <- names(scales)
   cov <- log2(raws + 1)
   scales <- round(max(quantile(cov, 0.995))) + 1
@@ -102,7 +81,7 @@ if (any(bam_cond %in% "input")) {
   norms <- append(norms, list(atac = cov))
 } else {
   # without input/none
-  norms <- mclapply(bam_cond, function(i) {
+  norms <- mclapply(names(hms), function(i) {
     counts <- log2(hms[[i]] + 1)
     upper <- round(max(quantile(counts, 0.995))) + 1
     counts <- counts / upper * 20
@@ -118,15 +97,26 @@ if (any(bam_cond %in% "input")) {
   norms <- append(norms, list(atac = cov))
 }
 
+### call ATAC-seq peaks
+if (opt$verbose) {
+    cat(
+    "
+    >>> Reading ATAC-seq peaks.")
+}
+peaks <- import(paste0(opt$outdir, "/peaks.bed"))
 
 
-##### Part 4: Construction of feature matrix #####
 ### flanking regions
+if (opt$verbose) {
+    cat(
+    "
+    >>> Counting signals at flanking regions.")
+}
 # Note: extend 500 bp or reach another ATAC-seq peak
-prev <- resize(peaks, width = width(peaks) + 500, fix = "end")
-prev <- resize(prev, width = 500, fix = "start")
-folw <- resize(peaks, width = width(peaks) + 500, fix = "start")
-folw <- resize(folw, width = 500, fix = "end")
+prev <- resize(peaks, width = width(peaks) + opt$flank, fix = "end")
+prev <- resize(prev, width = opt$flank, fix = "start")
+folw <- resize(peaks, width = width(peaks) + opt$flank, fix = "start")
+folw <- resize(folw, width = opt$flank, fix = "end")
 overs <- IRanges::intersect(prev, peaks)
 prev <- IRanges::setdiff(prev, overs)
 overs <- IRanges::intersect(folw, peaks)
@@ -138,7 +128,7 @@ pnorms <- lapply(names(norms), function(n){
     deps <- extractList(norms[[n]][[i]], prange[[i]])
     deps <- max(deps)
     return(deps)
-  }, mc.cores = cores)
+  }, mc.cores = opt$cores)
 })
 pnorms <- lapply(pnorms, unlist)
 pnorms <- data.frame(matrix(unlist(pnorms), ncol = 4, byrow = F))
@@ -149,7 +139,7 @@ nprev <- lapply(names(norms)[names(norms) != 'atac'], function(n) {
     deps <- extractList(norms[[n]][[i]], pprev[[i]])
     deps <- max(deps)
     return(deps)
-  }, mc.cores = cores)
+  }, mc.cores = opt$cores)
 })
 nprev <- lapply(nprev, unlist)
 nprev <- data.frame(matrix(unlist(nprev), ncol = 3, byrow = F))
@@ -160,7 +150,7 @@ nfolw <- lapply(names(norms)[names(norms) != 'atac'], function(n) {
     deps <- extractList(norms[[n]][[i]], pfolw[[i]])
     deps <- max(deps)
     return(deps)
-  }, mc.cores = cores)
+  }, mc.cores = opt$cores)
 })
 nfolw <- lapply(nfolw, unlist)
 nfolw <- data.frame(matrix(unlist(nfolw), ncol = 3, byrow = F))
@@ -171,12 +161,18 @@ pnorms$me_ratio <- pnorms$h3k4me3 - pnorms$h3k4me1
 pnorms$me_ratio <- cut(pnorms$me_ratio, breaks = c(-Inf, -1, 1, Inf), labels = c(0, 1, 2))
 
 ### labelling peaks
+if (opt$verbose) {
+    cat(
+    "
+    >>> Labeling genomic regions."
+    )
+}
 candidates <- peaks
 mcols(candidates) <- pnorms
-actE_index <- candidates %over% active_enc
-inaE_index <- candidates %over% inactive_enc & candidates %outside% active_enc
-actP_index <- candidates %over% active_pmo
-inaP_index <- candidates %over% inactive_pmo & candidates %outside% active_pmo
+actE_index <- candidates %over% annos$active_enc
+inaE_index <- candidates %over% annos$inactive_enc & candidates %outside% annos$active_enc
+actP_index <- candidates %over% annos$active_pmo
+inaP_index <- candidates %over% annos$inactive_pmo & candidates %outside% annos$active_pmo
 
 mcols(candidates)["actE"] <- NA
 mcols(candidates)["actP"] <- NA
@@ -210,11 +206,18 @@ mcols(candidates)[, grep("actP|actE", names(mcols(candidates)))] <- lapply(
     x <- x[order(tmp)]
   }
 )
-### transform to data.frame
-cand.df <- data.frame(mcols(candidates))
-cand.df <- cand.df[which(!is.na(cand.df$actE) & !is.na(cand.df$actP)), ]
 
 ### Splitting training and test data
+if (opt$verbose) {
+    cat(
+    "
+    >>> Dividing training and test sets."
+    )
+}
+# transform to data.frame
+cand.df <- data.frame(mcols(candidates))
+cand.df <- cand.df[which(!is.na(cand.df$actE) & !is.na(cand.df$actP)), ]
+# divide training and test sets
 set.seed(24)
 actE <- which(cand.df$actE == 1)
 actP <- which(cand.df$actP == 1)
@@ -227,72 +230,65 @@ test_ind <- !(1:nrow(cand.df) %in% training_ind)
 training <- cand.df[training_ind,]
 test <- cand.df[test_ind,]
 
-### Bayesian Network I: structure learning
-# Structure 1: with ATAC and active nodes
-BN_graph <- empty.graph(nodes = c(
-  "atac", "h3k27ac", "h3k4me1", "h3k4me3",
-  "actP", "actE", "me_ratio"
-))
-arc.set <- matrix(
-  c(
-    "h3k4me1", "actP", "h3k4me3", "actP",
-    "h3k4me1", "actE", "h3k4me3", "actE",
-    "atac", "actP", "atac", "actE",
-    "h3k4me1", "me_ratio", "h3k4me3", "me_ratio",
-    "h3k27ac", 'actP', 'h3k27ac', 'actE',
-    "me_ratio", "actP", "me_ratio", "actE"
-  ),
-  byrow = TRUE, ncol = 2,
-  dimnames = list(NULL, c("from", "to"))
-)
-arcs(BN_graph) <- arc.set
-
-### Bayesian Network II: parameter learning
-fit.bn <- bn.fit(BN_graph, data = training, method = "bayes")
-
-### Bayesian Network III: prediction and validation
-## Predict nodes
+### Bayesian Network
+if (opt$verbose) {
+    cat(
+    "
+    >>> Training and testing using Bayesian network model."
+    )
+}
+# structure
+net_graph <- bn_net()
+# parameter
+fit.bn <- bn.fit(net_graph, data = training, method = "bayes")
+# predict nodes
 pActE <- predict(fit.bn, node = "actE", data = test, prob = T, method = "parents")
 pActP <- predict(fit.bn, node = "actP", data = test, prob = T, method = "parents")
 
-### Accuracy
-acc.label <- list(enc = NULL, pmo = NULL)
-tab <- table(test$actE, pActE)
-acc.label[["pmo"]] <- paste("Pmo (Acc = ", toString(round((sum(diag(tab)) / sum(tab)) * 100, 2)), ")", sep = "")
-tab <- table(test$actP, pActP)
-acc.label[["enc"]] <- paste("Enc (Acc = ", toString(round((sum(diag(tab)) / sum(tab)) * 100, 2)), ")", sep = "")
-
-### PR curve
-pr.label <- list(enc = NULL, pmo = NULL)
+### Metrices
+df <- data.frame(enc = rep(0,3), pmo = rep(0,3))
+rownames(df) <- c("Accuracy", "AUROC", "AUPRC")
 pred <- data.frame(pAct = pActP, tAct = test$actP, prob = attr(pActP, "prob")[2, ])
 pred$pAct <- factor(pred$pAct, level = c(1, 0))
 pred$tAct <- factor(pred$tAct, level = c(1, 0))
 pred2 <- data.frame(pAct = pActE, tAct = test$actE, prob = attr(pActE, "prob")[2, ])
 pred2$pAct <- factor(pred2$pAct, level = c(1, 0))
 pred2$tAct <- factor(pred2$tAct, level = c(1, 0))
+# Accuracy
+tab <- table(test$actE, pActE)
+df$enc[1] <- round((sum(diag(tab)) / sum(tab)) * 100, 2)
+tab <- table(test$actP, pActP)
+df$pmo[1] <- round((sum(diag(tab)) / sum(tab)) * 100, 2)
+# ROC curve
+auc_pred <- roc_auc(data = pred, tAct, prob)$.estimate
+df$pmo[2] <- round(auc_pred * 100, 2)
+auc2_pred <- roc_auc(data = pred2, tAct, prob)$.estimate
+df$enc[2] <- round(auc2_pred * 100, 2)
+# PR curve
 auc_pred <- pr_auc(data = pred, truth = tAct, prob)$.estimate
-pr.label[["pmo"]] <- paste("Pmo (AUPRC = ", toString(round(auc_pred, 4)), ")", sep = "")
+df$pmo[3] <- round(auc_pred * 100, 2)
 auc2_pred <- pr_auc(data = pred2, truth = tAct, prob)$.estimate
-pr.label[["enc"]] <- paste("Enc (AUPRC = ", toString(round(auc2_pred, 4)), ")", sep = "")
-
-### ROC curve
-roc.label <- list(enc = NULL, pmo = NULL)
-# pred <- data.frame(pAct = pActP, tAct = test$actP, prob = attr(pActP, "prob")[2, ])
-# pred2 <- data.frame(pAct = pActE, tAct = test$actE, prob = attr(pActE, "prob")[2, ])
-auc_pred <- roc_auc(data = pred, tAct, prob)
-auc_pred <- auc_pred$.estimate
-roc.label[["pmo"]] <- paste("Pmo (AUC=", toString(round(1 - auc_pred, 4)), ")", sep = "")
-auc2_pred <- roc_auc(data = pred2, tAct, prob)
-auc2_pred <- auc2_pred$.estimate
-roc.label[["enc"]] <- paste("Enc (AUC=", toString(round(1 - auc2_pred, 4)), ")", sep = "")
+df$enc[3] <- round(auc2_pred * 100, 2)
 
 # output
-print("Accuracy:")
-do.call(cat, c(acc.label, sep = "\n"))
-print("AUPRC:")
-do.call(cat, c(pr.label, sep = "\n"))
-print("AUC:")
-do.call(cat, c(roc.label, sep = "\n")
+cat(
+        "
+        > Performance on test set")
+cat(sprintf(
+        "
+        %-8s %-8s %-8s", "", "Enhancer", "Promoter"))
+cat(sprintf(
+        "
+        %-8s %-8s %-8s", "--------", "--------", "--------"))
+for (i in rownames(df)) {
+    cat(sprintf(
+        "
+        %-8s %-8s %-8s", i, df[i,'enc'], df[i, 'pmo']))
+}
 
-### output prediction model
-return(fti.bn)
+### output trained model
+saveRDS(fit.bn, paste0(opt$outdir, "/model.RDS"))
+cat(
+    "
+    DONE: RegBay model training. Run time:", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), "mins\n"
+)
