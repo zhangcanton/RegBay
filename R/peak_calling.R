@@ -448,4 +448,4 @@ peaks <- peaks[peaks$score < opt$pval]
 export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
 cat(
     "
-    DONE: Peak processing. Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " mins\n")
+    DONE: Peak processing. Run time:", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), "mins\n")
