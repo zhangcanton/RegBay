@@ -51,27 +51,60 @@ read_meta <- function(opt){
 
 ##### Build annotation sets #####
 get_anno <- function(flist){
-    flist <- flist[grepl("act", flist$var), ]
+    flist <- flist[grepl("act", names(flist))]
+    if(length(flist) < 4 | !all(
+        c('active_pmo', 'inactive_pmo', 'active_enc', 'inactive_enc') %in% names(flist))) {
+        stop("Missing annotation sets.")
+    }
     gr <- mapply(
         function(v, f) assign(v, import.bed(f)),
-        flist$var,
-        flist$fn
+        names(flist),
+        flist
     )
     return(gr)
 }
 
 
 ##### Count sequence coverage #####
-seq_cov <- function(fn, cores = 1){
-    if(is.character(fn)){
+seq_cov <- function(fn, cores = 1) {
+    if (is.character(fn)) {
         cov <- coverage(fn)
-    }else if(is.list(fn)){
+        cov <- cov[grep("^chr[0-9,X]{1,2}$", names(cov))]
+    } else if (is.list(fn)) {
+        ids <- sapply(c("h3k27ac", "h3k4me1", "h3k4me3", "input"), function(ch) grep(ch, names(fn)))
         cov <- mclapply(
-            fn[c("atac", "h3k27ac", "h3k4me1", "h3k4me3", "input")],
-            coverage,
+            fn[ids[sapply(ids, length) != 0]],
+            function(f) {
+                dep <- coverage(f)
+                dep <- dep[grep("^chr[0-9,X]{1,2}$", names(dep))]
+                return(dep)
+            },
             mc.cores = cores
         )
-        names(cov) <- c("atac", "h3k27ac", "h3k4me1", "h3k4me3", "input")
+        names(cov) <- c("h3k27ac", "h3k4me1", "h3k4me3", "input")[sapply(ids, length) != 0]
     }
     return(cov)
+}
+
+
+### Bayesian network structure
+bn_net <- function() {
+    netw <- empty.graph(nodes = c(
+        "atac", "h3k27ac", "h3k4me1", "h3k4me3",
+        "actP", "actE", "me_ratio"
+    ))
+    arc.set <- matrix(
+        c(
+            "h3k4me1", "actP", "h3k4me3", "actP",
+            "h3k4me1", "actE", "h3k4me3", "actE",
+            "atac", "actP", "atac", "actE",
+            "h3k4me1", "me_ratio", "h3k4me3", "me_ratio",
+            "h3k27ac", "actP", "h3k27ac", "actE",
+            "me_ratio", "actP", "me_ratio", "actE"
+        ),
+        byrow = TRUE, ncol = 2,
+        dimnames = list(NULL, c("from", "to"))
+    )
+    arcs(netw) <- arc.set
+    return(netw)
 }
