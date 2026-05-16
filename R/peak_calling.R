@@ -4,7 +4,7 @@
 
 cat(
     "
-    +++++              ATAC-seq peak calling               +++++\n
+    +++++              ATAC-seq peak calling               +++++
     "
 )
 
@@ -25,19 +25,23 @@ if ("peak_fn" %in% names(meta)) {
         stop("Unable to read peak file.")
     }
     if (opt$verbose) {
-        cat(">>> Detect a ATAC-seq peak file. Skip peak calling.\n")
+        cat("
+    >>> Detected a ATAC-seq peak file. Skiping peak calling.")
     }
     peak_fn <- meta$peak_fn
 } else {
     peak_fn <- NULL
     if (opt$verbose) {
-        cat(">>> No peak file detected. Start peak calling.\n")
+        cat("
+    >>> No peak file detected. Starting peak calling.")
     }
 }
 
 ### Count ATAC-seq coverage
 if (opt$verbose) {
-    cat(">>> Count ATAC-seq coverage ...\n")
+    cat(
+    "
+    >>> Counting ATAC-seq coverage.")
 }
 cov <- seq_cov(meta$atac)
 cov <- cov[sapply(cov, function(x) length(x@values)) > 1] # in case some chr are empty, kick out those
@@ -46,7 +50,9 @@ cov <- cov[sapply(cov, function(x) length(x@values)) > 1] # in case some chr are
 if (is.character(peak_fn)) {
     ### user-defined peak regions, withou peak calling
     if (opt$verbose) {
-        cat(">>> Read in input ATAC-seq peaks ...\n")
+        cat(
+    "
+    >>> Reading in input ATAC-seq peaks.")
     }
     peaks <- tryCatch(
         import(peak_fn),
@@ -67,7 +73,9 @@ if (is.character(peak_fn)) {
 } else if (is.null(peak_fn)) {
     ### call peaks using built-in peak caller
     if (opt$verbose) {
-        cat(">>> Calling ATAC-seq peaks using RegBay's peak caller ...\n")
+        cat(
+    "
+    >>> Calling ATAC-seq peaks using RegBay's peak caller.")
     }
     ### fit to nb distribution
     mu <- sapply(cov, function(x) {
@@ -94,7 +102,9 @@ if (is.character(peak_fn)) {
 
 ### cut long peaks (> 1kb) into individual peaks
 if (opt$verbose) {
-    cat(">>> Narrowing and spliting long peaks ...\n")
+    cat(
+    "
+    >>> Spliting broad peaks.")
 }
 lens <- max(opt$cutoff, quantile(width(peaks), 0.8))
 # shorts <- peaks[which(width(peaks) <= lens & width(peaks) > 100)]
@@ -243,6 +253,11 @@ longs <- longs[width(longs) > 100]
 
 
 ### local test for short peaks
+if (opt$verbose) {
+    cat(
+    "
+    >>> Re-estimating narrow peaks.")
+}
 cuts <- Views(cov, peaks)
 shorts <- lapply(cuts, function(x) x[width(x) <= lens & width(x) > 100])
 shorts <- lapply(shorts, function(x) { # skip the peaks at the first and last 5kb of each chromosome
@@ -400,6 +415,11 @@ shorts <- do.call("c", shorts)
 shorts <- c(shorts, lefts)
 shorts <- shorts[width(shorts) > 100]
 
+if (opt$verbose) {
+    cat(
+    "
+    >>> Merging narrow and broad peaks.")
+}
 peaks <- c(shorts, longs)
 peaks <- reduce(peaks)
 peaks <- split(peaks@ranges, peaks@seqnames)
@@ -426,4 +446,6 @@ peaks <- peaks[peaks$score < opt$pval]
 
 ### output peak regions
 export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
-cat(paste0("Peak processing done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min\n\n"))
+cat(
+    "
+    DONE: Peak processing. Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " mins\n")
