@@ -2,7 +2,7 @@
 
 ### Usage message
 ```
-Usage: Rscript regBay.R [options]
+Usage: Rscript regBay.R [module] -i metadata.txt [options]
 Modules:
     -C, --peakcall  Peak calling/refining module
     -R, --train     Training module for RegBay regulatory element model
@@ -26,7 +26,7 @@ Other options:
 ### Reuiqred input files
 A comma delimited metadata file is required, which lists all input files.
 
-- BAM files: ATAC, H3K27ac, H3K4me1, H3K4me3, input (empty or IgG)
+- BAM files: ATAC, H3K27ac, H3K4me1, H3K4me3, input (empty or IgG, optional)
 - Annotation sets: active promoter, inactive promoter, active enhancer, inactive enhancer
 - (optional) ATAC-seq peaks
 
@@ -41,13 +41,19 @@ active_pmo,act_pmo.bed
 ### Output files
 - Peak calling module: peaks.bed contains refined ATAC-seq peak regions.
 - Training module: model.RDS contains a trained Bayesian network model.
-- Predicting module: prediction.bw contains predicted probabilities for all regulatory element candidates.
+- Predicting module: prediction.bed contains predicted probabilities for all regulatory element candidates.
 
 ## Parameters
 
 ### ATAC-seq peak calling / refinement
-
+```
+-l/cutoff
+-p/pval
+-w/window
+```
 ### Training / prediction of RegBay model
-
+```
+-f/flank
+```
 ## Contact and citation
 
