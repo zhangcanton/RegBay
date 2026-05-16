@@ -25,19 +25,19 @@ if ("peak_fn" %in% names(meta)) {
         stop("Unable to read peak file.")
     }
     if (opt$verbose) {
-        print("Detect a ATAC-seq peak file. Skip peak calling.")
+        cat("Detect a ATAC-seq peak file. Skip peak calling.\n")
     }
     peak_fn <- meta$peak_fn
 } else {
     peak_fn <- NULL
     if (opt$verbose) {
-        print("No peak file detected. Start peak calling.")
+        cat("No peak file detected. Start peak calling.\n")
     }
 }
 
 ### Count ATAC-seq coverage
 if (opt$verbose) {
-    print(">>> Count ATAC-seq coverage ...")
+    cat(">>> Count ATAC-seq coverage ...\n")
 }
 cov <- seq_cov(meta$atac)
 cov <- cov[grep("^chr[0-9,X]{1,2}$", names(cov))]
@@ -47,7 +47,7 @@ cov <- cov[sapply(cov, function(x) length(x@values)) > 1] # in case some chr are
 if (is.character(peak_fn)) {
     ### user-defined peak regions, withou peak calling
     if (opt$verbose) {
-        print(">>> Read in user-defined ATAC-seq peaks ...")
+        cat(">>> Read in input ATAC-seq peaks ...\n")
     }
     peaks <- tryCatch(
         import(peak_fn),
@@ -68,7 +68,7 @@ if (is.character(peak_fn)) {
 } else if (is.null(peak_fn)) {
     ### call peaks using built-in peak caller
     if (opt$verbose) {
-        print(">>> Calling ATAC-seq peaks using built-in peak caller ...")
+        cat(">>> Calling ATAC-seq peaks using RegBay's peak caller ...\n")
     }
     ### fit to nb distribution
     mu <- sapply(cov, function(x) {
@@ -95,7 +95,7 @@ if (is.character(peak_fn)) {
 
 ### cut long peaks (> 1kb) into individual peaks
 if (opt$verbose) {
-    print(">>> Narrowing and spliting long peaks ...")
+    cat(">>> Narrowing and spliting long peaks ...\n")
 }
 lens <- max(opt$cutoff, quantile(width(peaks), 0.8))
 # shorts <- peaks[which(width(peaks) <= lens & width(peaks) > 100)]
@@ -427,5 +427,4 @@ peaks <- peaks[peaks$score < opt$pval]
 
 ### output peak regions
 export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
-print(paste0("Peak processing done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min"))
-
+cat(paste0("Peak processing done! Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " min\n\n"))
