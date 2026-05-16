@@ -25,13 +25,13 @@ if ("peak_fn" %in% names(meta)) {
         stop("Unable to read peak file.")
     }
     if (opt$verbose) {
-        cat("Detect a ATAC-seq peak file. Skip peak calling.\n")
+        cat(">>> Detect a ATAC-seq peak file. Skip peak calling.\n")
     }
     peak_fn <- meta$peak_fn
 } else {
     peak_fn <- NULL
     if (opt$verbose) {
-        cat("No peak file detected. Start peak calling.\n")
+        cat(">>> No peak file detected. Start peak calling.\n")
     }
 }
 
@@ -40,7 +40,6 @@ if (opt$verbose) {
     cat(">>> Count ATAC-seq coverage ...\n")
 }
 cov <- seq_cov(meta$atac)
-cov <- cov[grep("^chr[0-9,X]{1,2}$", names(cov))]
 cov <- cov[sapply(cov, function(x) length(x@values)) > 1] # in case some chr are empty, kick out those
 
 ### Initial ATAC-seq peak calling (IF peak file provided, skip)
