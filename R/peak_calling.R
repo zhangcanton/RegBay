@@ -24,16 +24,24 @@ if ("peak_fn" %in% names(meta)) {
     if (suffix != "bed" | suffix != "narrowPeak") {
         stop("Unable to read peak file.")
     }
+    cat(
+    "
+    [INFO] Found ATAC-seq peak file.")
     if (opt$verbose) {
-        cat("
-    >>> Detected a ATAC-seq peak file. Skiping peak calling.")
+        cat(
+    "
+    >>> Skipping peak calling.")
     }
     peak_fn <- meta$peak_fn
 } else {
     peak_fn <- NULL
+    cat(
+    "
+    [INFO] No ATAC-seq peak file detected.")
     if (opt$verbose) {
-        cat("
-    >>> No peak file detected. Starting peak calling.")
+        cat(
+    "
+    >>> Starting from peak calling.")
     }
 }
 
@@ -52,7 +60,7 @@ if (is.character(peak_fn)) {
     if (opt$verbose) {
         cat(
     "
-    >>> Reading in input ATAC-seq peaks.")
+    >>> Loading ATAC-seq peaks.")
     }
     peaks <- tryCatch(
         import(peak_fn),
@@ -75,7 +83,7 @@ if (is.character(peak_fn)) {
     if (opt$verbose) {
         cat(
     "
-    >>> Calling ATAC-seq peaks using RegBay's peak caller.")
+    >>> Calling ATAC-seq peaks.")
     }
     ### fit to nb distribution
     mu <- sapply(cov, function(x) {
@@ -448,4 +456,4 @@ peaks <- peaks[peaks$score < opt$pval]
 export.bed(peaks, paste0(opt$outdir, '/peaks.bed'))
 cat(
     "
-    DONE: Peak processing. Run time:", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), "mins\n")
+    DONE: Peak processing. Run time: ", round(difftime(Sys.time(), s.time, units = "mins"), digits = 2), " mins\n")
