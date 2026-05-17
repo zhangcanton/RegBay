@@ -110,8 +110,12 @@ if (any(names(hms) %in% "input")) {
 }
 
 ### call ATAC-seq peaks
+if (is.null(meta$peak_fn)) {
+    stop("Missing peak file.")
+}
+flag <- check_file(meta$peak_fn)
 peaks <- tryCatch(
-    import(paste0(opt$outdir, "/peaks.bed")),
+    import(meta$peak_fn),
     error = function(e) {
         stop("Unable to read peak file.")
     }
