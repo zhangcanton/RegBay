@@ -21,7 +21,7 @@ meta <- read_meta(opt)
 if(opt$verbose){
     cat(
     "
-    >>> Reading in regulatory element annotation sets.")
+    >>> Loading regulatory element annotation sets.")
 }
 annos <- get_anno(meta)
 
@@ -119,11 +119,6 @@ if (any(names(hms) %in% "input")) {
 }
 
 ### call ATAC-seq peaks
-if (opt$verbose) {
-    cat(
-    "
-    >>> Reading ATAC-seq peaks.")
-}
 peaks <- tryCatch(
   import(paste0(opt$outdir, "/peaks.bed")),
   error = function(e) {
@@ -132,12 +127,6 @@ peaks <- tryCatch(
 )
 
 ### flanking regions
-if (opt$verbose) {
-    cat(
-    "
-    >>> Counting signals at flanking regions.")
-}
-# Note: extend 500 bp or reach another ATAC-seq peak
 prev <- resize(peaks, width = width(peaks) + opt$flank, fix = "end")
 prev <- resize(prev, width = opt$flank, fix = "start")
 folw <- resize(peaks, width = width(peaks) + opt$flank, fix = "start")
@@ -185,13 +174,7 @@ pnorms[, 1:3] <- pmax(neigh, pnorms[, 1:3])
 pnorms$me_ratio <- pnorms$h3k4me3 - pnorms$h3k4me1
 pnorms$me_ratio <- cut(pnorms$me_ratio, breaks = c(-Inf, -1, 1, Inf), labels = c(0, 1, 2))
 
-### labelling peaks
-if (opt$verbose) {
-    cat(
-    "
-    >>> Labeling genomic regions."
-    )
-}
+### labelling candidate genomic regions
 candidates <- peaks
 mcols(candidates) <- pnorms
 actE_index <- candidates %over% annos$active_enc
@@ -233,12 +216,6 @@ mcols(candidates)[, grep("actP|actE", names(mcols(candidates)))] <- lapply(
 )
 
 ### Splitting training and test data
-if (opt$verbose) {
-    cat(
-    "
-    >>> Dividing training and test sets."
-    )
-}
 # transform to data.frame
 cand.df <- data.frame(mcols(candidates))
 cand.df <- cand.df[which(!is.na(cand.df$actE) & !is.na(cand.df$actP)), ]
@@ -259,7 +236,7 @@ test <- cand.df[test_ind,]
 if (opt$verbose) {
     cat(
     "
-    >>> Training and testing using Bayesian network model."
+    >>> Training prediction model based on Bayesian network."
     )
 }
 # structure
