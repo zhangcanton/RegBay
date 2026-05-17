@@ -41,6 +41,27 @@ hms <- seq_cov(meta, cores = opt$cores)
 if(!all(tolower(c("H3K27ac", "H3K4me1", "H3K4me3")) %in% names(hms))) {
     stop("Missing histone modification profiles.")
 }
+if (!"input" %in% names(hms)) {
+  cat(
+    "
+    [INFO] No input/control for histone modifications is detected.")
+  if (opt$verbose) {
+    cat(
+    "
+    >>> Running analysis without input/control.")
+  }
+} else{
+  cat(
+    "
+    [INFO] Found input/control for histone modifications."
+  )
+  if (opt$verbose) {
+    cat(
+      "
+    >>> Running analysis with input/control."
+    )
+  }
+}
 
 ### Normalization
 if (opt$verbose) {
@@ -103,8 +124,12 @@ if (opt$verbose) {
     "
     >>> Reading ATAC-seq peaks.")
 }
-peaks <- import(paste0(opt$outdir, "/peaks.bed"))
-
+peaks <- tryCatch(
+  import(paste0(opt$outdir, "/peaks.bed")),
+  error = function(e) {
+    stop("Unable to read peak file.")
+  }
+)
 
 ### flanking regions
 if (opt$verbose) {
@@ -272,19 +297,26 @@ df$enc[3] <- round(auc2_pred * 100, 2)
 
 # output
 cat(
-        "
-        > Performance on test set")
+        "\n
+        *** Performance on test set ***")
+cat(sprintf(
+  "
+          %-26s", "--------------------------"))
 cat(sprintf(
         "
-        %-8s %-8s %-8s", "", "Enhancer", "Promoter"))
+          %-8s %-8s %-8s", "Metrics", "Enhancer", "Promoter"))
 cat(sprintf(
         "
-        %-8s %-8s %-8s", "--------", "--------", "--------"))
+          %-26s", "--------------------------"))
 for (i in rownames(df)) {
-    cat(sprintf(
-        "
-        %-8s %-8s %-8s", i, df[i,'enc'], df[i, 'pmo']))
+  cat(sprintf(
+    "
+          %-8s %-8s %-8s", i, df[i, "enc"], df[i, "pmo"]
+  ))
 }
+cat(sprintf(
+  "
+          %-26s", "--------------------------\n"))
 
 ### output trained model
 saveRDS(fit.bn, paste0(opt$outdir, "/model.RDS"))
