@@ -194,6 +194,10 @@ if (opt$verbose) {
     )
 }
 # pre-trained model
+if(is.null(opt$model)) {
+    stop("Missing model.")
+}
+flag <- check_file(opt$model)
 fit.bn <- tryCatch(
     readRDS(opt$model),
     error = function(e) {
