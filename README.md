@@ -48,7 +48,7 @@ A comma delimited metadata file is required, which lists all input files.
     - BAM files: ATAC, H3K27ac, H3K4me1, H3K4me3, input (empty or IgG, optional)
     - (optional) ATAC-seq peaks
 
-Example:
+Example metadata.txt:
 ```
 ATAC,sample.atac.bam
 H3K27ac,sample.k27ac.bam
