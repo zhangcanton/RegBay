@@ -85,4 +85,4 @@ Statistical significance threshold for peak calling based on binomial negative d
 ```
 RegBay searches histone modification signals within the flanking regions. By default, this search range crosses approximate two histones.
 ## Contact
-
+yzhang@molgen.mpg.de
