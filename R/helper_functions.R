@@ -3,7 +3,7 @@
 env_check <- function(){
     cat(
     "
-    >>> Checking env."
+    >>> Checking env"
     )
     # default packages
     cran_pkg <- data.frame(
@@ -64,14 +64,14 @@ env_check <- function(){
     for(pkg in c(cran_pkg$pkg, bioc_pkg$pkg)) {
         suppressPackageStartupMessages(library(pkg, character.only = TRUE))
     }
+    cat(
+    "
+    DONE."
+    )
     return(0)
 }
 
-env_check()
-cat(
-    "
-    DONE: env set."
-)
+# env_check()
 
 
 ########## Parameter settings ##########
