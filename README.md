@@ -1,6 +1,19 @@
 # RegBay: Bayesian network-based computational framework for regulatory element prediction.
 
-### Usage message
+## Table of Contents
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [General workflow](#general-workflow)
+- [Files and formats](#files-and-formats)
+- [Parameters](#parameters)
+- [Contact](#contact)
+
+## Requirements
+
+## Installation
+
+## Usage
 ```
 Usage: Rscript regBay.R [module] -i metadata.txt [options]
 Modules:
@@ -34,7 +47,7 @@ Rscript regBay.R -R -i metadata.txt [options]
 Rscript regBay.R -C -i metadata.txt [options]
 Rscript regBay.R -P -i metadata.txt -m model.RDS [options]
 ```
-## I/O files and formats
+## Files and formats
 ### Reuiqred input files
 A comma delimited metadata file is required, which lists all input files.
 - Peak calling/refinement module
