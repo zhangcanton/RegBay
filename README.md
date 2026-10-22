@@ -27,7 +27,7 @@ git clone https://github.com/zhangcanton/RegBay.git
 ```
 To make it easier to use, we recommend you to add the path of RegBay in the environmental variable PATH.
 ```bash
-export PATH=/path/to/RegBay/bin/:$PATH
+export PATH=/path/to/RegBay/R/:$PATH
 ```
 
 ## Usage
