@@ -1,6 +1,10 @@
 
 ########## Load environment ##########
 env_check <- function(){
+    cat(
+    "
+    >>> Checking env."
+    )
     # default packages
     cran_pkg <- data.frame(
         pkg = c("bnlearn", "parallel", "dplyr", "yardstick"),
@@ -63,7 +67,11 @@ env_check <- function(){
     return(0)
 }
 
-# env_check()
+env_check()
+cat(
+    "
+    DONE: env set."
+)
 
 
 ########## Parameter settings ##########
@@ -82,7 +90,7 @@ mat <- matrix(c(
     "model", "m", 1, "character", "path to pre-train RegBay model (.rds format)",
     # general parameters
     "cores", "t", 1, "integer", "number of cores to use (DEFAULT:1)",
-    "verbose", "v", 0, "logical", "show detailed message" (DEFAULT:FALSE),
+    "verbose", "v", 0, "logical", "show detailed message (DEFAULT:FALSE)",
     "outdir", "o", 1, "character", "output directory (DEFAULT:current folder)",
     "help", "h", 0, "logical", "show help message"
 ), ncol = 5, byrow = T)
