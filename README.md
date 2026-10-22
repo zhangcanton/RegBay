@@ -11,7 +11,24 @@
 
 ## Requirements
 
+* **R** (>= 4.4.1)
+* **GenomicRanges** (>= 1.56.1)
+* **rtracklayer** (>= 1.64.0)
+* **GenomicAlignments** (>= 1.40.0)
+* **parallel** (>= 4.4.1)
+* **dplyr** (>= 1.1.4)
+* **bnlearn** (>= 5.0)
+* **yardstick** (>= 1.3.2)
+
 ## Installation
+RegBay can be downloaded using git command.
+```bash
+git clone https://github.com/zhangcanton/RegBay.git
+```
+To make it easier to use, we recommend you to add the path of RegBay in the environmental variable PATH.
+```bash
+export PATH=/path/to/RegBay/bin/:$PATH
+```
 
 ## Usage
 ```
