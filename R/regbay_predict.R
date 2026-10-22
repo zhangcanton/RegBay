@@ -74,7 +74,7 @@ if (any(names(hms) %in% "input")) {
   norms <- mclapply(seq_along(scales), function(i){
     # log2 normalization to input signals
     inputs <- hms[['input']] * scales[i]
-    counts <- log2((hms[[i]] + 1) / (hms[["input"]] + 1))
+    counts <- log2((hms[[i]] + 1) / (inputs + 1))
     # range normalization (skip potential outliers)
     upper <- round(max(quantile(counts, 0.995))) + 1
     lower <- round(min(quantile(counts, 0.005))) - 1
@@ -178,8 +178,8 @@ mcols(candidates)[, -grep("actP|actE|me_ratio", names(mcols(candidates)))] <- la
   function(x) as.integer(round(x))
 )
 candidates$atac <- factor(candidates$atac, levels = seq(0, 20))
-mcols(candidates)[, -grep("actP|actE|me_ratio|ATAC", names(mcols(candidates)))] <- lapply(
-  mcols(candidates)[, -grep("actP|actE|me_ratio|ATAC", names(mcols(candidates)))],
+mcols(candidates)[, -grep("actP|actE|me_ratio|atac", names(mcols(candidates)))] <- lapply(
+  mcols(candidates)[, -grep("actP|actE|me_ratio|atac", names(mcols(candidates)))],
   function(x) {
     tmp <- order(x)
     x <- factor(sort(x), levels = seq(-10, 20))
