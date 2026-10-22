@@ -1,0 +1,22 @@
+name: R-version-check
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    startegy:
+      matrix:
+        r-version: ['4.0', '4.1', '4.2', '4.3', 'release']
+
+    steps:
+      - names: Checkout repository
+        uses: actions/checkout@v4
+
+      - names: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r-version }}
+      
+      - names: Run script
+        run: Rscript -e "source('R/helper_functions.R'); env_check()"
