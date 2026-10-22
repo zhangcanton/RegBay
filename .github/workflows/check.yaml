@@ -26,4 +26,4 @@ jobs:
           r-version: ${{ matrix.r-version }}
       
       - name: Run script
-        run: Rscript -e "source('R/helper_functions.R'); env_check()"
+        run: Rscript regBay.R --help
