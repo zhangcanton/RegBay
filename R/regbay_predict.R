@@ -71,7 +71,7 @@ if (any(names(hms) %in% "input")) {
   # with input/none
   names(tot) <- names(hms)
   scales <- unlist(tot[which(names(tot) != 'input')]) / tot["input"]
-  norms <- mclapply(seq_along(scales), function(i){
+  norms <- mclapply(names(scales), function(i){
     # log2 normalization to input signals
     inputs <- hms[['input']] * scales[i]
     counts <- log2((hms[[i]] + 1) / (inputs + 1))
@@ -100,10 +100,10 @@ if (any(names(hms) %in% "input")) {
     counts[counts > 20] <- 20
     counts <- counts[sapply(counts, function(x) length(x@values)) > 1] # in case some chr are empty, kick out those
     return(counts)
-  }, mc.cores = cores)
-  names(norm_counts) <- names(hms)
+  }, mc.cores = opt$cores)
+  names(norms) <- names(hms)
   cov <- log2(raws + 1)
-  scales <- round(max(quantile(counts, 0.995))) + 1
+  scales <- round(max(quantile(cov, 0.995))) + 1
   cov <- cov / scales * 20
   cov[cov > 20] <- 20
   norms <- append(norms, list(atac = cov))
